@@ -3,6 +3,7 @@
 function App() {
   var self = this;
   this.nodeCache = [];
+  this.ioCache = [];
   setInterval(function() {
     self.save();
   }, 5000);
@@ -30,13 +31,43 @@ App.prototype.load = function(data) {
   });
 };
 App.prototype.refreshNode = function(node) {
+  var self = this;
   var cachedNode = this.nodeCache[node.uuid];
   var $e = cachedNode ? cachedNode.element : $('#' + node.uuid);
   
   // Create id doesn't exist
   if (!$e.length) {
-    $e = $($('#' + node.type + '-template').html());
+    $e = $($('#node-template').html());
+    
+    // Set all properties
     $e.attr('id', node.uuid);
+    $e.find('h1').text(node.name);
+    node.outputs.forEach(function(output) {
+      var elem = $('<div />')
+      .addClass('output')
+      .text(output.name)
+      .attr('id', output.uuid)
+      .appendTo($e);
+      
+      self.ioCache[output.uuid] = {
+        io: output,
+        element: elem
+      };
+    });
+    node.inputs.forEach(function(input) {
+      var elem = $('<div />')
+      .addClass('input')
+      .text(input.name)
+      .attr('id', input.uuid)
+      .appendTo($e);
+      
+      self.ioCache[input.uuid] = {
+        io: input,
+        element: elem
+      };
+    });
+    
+    // Append and cache
     $('#base').append($e);
     this.nodeCache[node.uuid] = {
       node: node,
@@ -46,19 +77,31 @@ App.prototype.refreshNode = function(node) {
   
   // Position correctly
   $e.css({
-    top: node.position.y,
-    left: node.position.x
+    //top: node.position.y,
+    //left: node.position.x
+    transform: 'translate('+node.position.x+'px,'+node.position.y+'px)'
   });
 };
 App.prototype.insertNode = function(type) {
-  var newNode = {
+  var nodeType = App.getNodeType(type);
+  
+  var newNode = $.extend(nodeType, {
     uuid: uuid.v4(),
     type: type,
     position: {
       x: 100,
       y: 100
     }
-  };
+  });
+  
+  newNode.inputs = newNode.inputs.map(function(input) {
+    input.uuid = uuid.v4();
+    return input;
+  });
+  newNode.outputs = newNode.outputs.map(function(output) {
+    output.uuid = uuid.v4();
+    return output;
+  });
   
   this.data.nodes.push(newNode);
   this.refreshNode(newNode);
@@ -68,6 +111,48 @@ App.prototype.save = function() {
 };
 App.prototype.getNodeById = function(id) {
   return this.nodeCache[id].node;
+};
+App.nodeTypes = {
+  input: {
+    link: {
+      name: 'Link',
+      inputs: [],
+      outputs: [
+        {
+          name: 'Output'
+        }
+      ]
+    }
+  },
+  db: {
+    find: {
+      name: 'DB Find',
+      inputs: [
+        {
+          name: 'Input'
+        }
+      ],
+      outputs: [
+        {
+          name: 'Success'
+        },
+        {
+          name: 'Fail'
+        }
+      ]
+    }
+  }
+};
+App.getNodeType = function(nodeTypeString) {
+  var split = nodeTypeString.split('.');
+  var piece;
+  var nodeType = App.nodeTypes;
+  while((piece = split.shift()) && (nodeType = nodeType[piece])) {
+  }
+  if (!nodeType || !nodeType.name) {
+    throw new Error('No such node type: ' + nodeTypeString);
+  }
+  return nodeType;
 };
 
 

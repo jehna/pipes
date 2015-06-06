@@ -2,6 +2,10 @@
 
 $(function() {
   $('#add-input').click(function() {
-    app.insertNode('input');
+    app.insertNode('input.link');
   });
+  $('#add-db').click(function() {
+    app.insertNode('db.find');
+  });
+  
 });

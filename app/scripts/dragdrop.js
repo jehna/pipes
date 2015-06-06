@@ -9,13 +9,13 @@ $(function() {
     event.preventDefault();
     
     var diff = {
-      x: (event.pageX - begin.eX) + begin.tX,
-      y: (event.pageY - begin.eY) + begin.tY,
+      x: event.pageX - begin.eX,
+      y: event.pageY - begin.eY,
     };
     
     dragNode.position = {
-      x: diff.x,
-      y: diff.y
+      x: diff.x + begin.tX,
+      y: diff.y + begin.tY
     };
     app.refreshNode(dragNode);
   };
