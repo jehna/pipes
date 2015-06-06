@@ -2,7 +2,7 @@
 
 $(function() {
   var begin;
-  var $dragObj;
+  var dragNode;
   var $body = $('body');
   
   var enableDrag = function(event) {
@@ -13,23 +13,24 @@ $(function() {
       y: (event.pageY - begin.eY) + begin.tY,
     };
     
-    $dragObj.css({
-      left: diff.x,
-      top: diff.y
-    });
+    dragNode.position = {
+      x: diff.x,
+      y: diff.y
+    };
+    app.refreshNode(dragNode);
   };
   
   $('#base').on('mousedown mouseup', '.card', function(event) {
     event.preventDefault();
     var $t = $(this);
-    $dragObj = $t;
+    dragNode = app.getNodeById($t.attr('id'));
     
     if (event.type === 'mousedown') {
       begin = {
         eX: event.pageX,
         eY: event.pageY,
-        tX: $t.offset().left,
-        tY: $t.offset().top
+        tX: dragNode.position.x,
+        tY: dragNode.position.y
       };
       $body.on('mousemove', enableDrag);
     }

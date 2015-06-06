@@ -2,10 +2,6 @@
 
 $(function() {
   $('#add-input').click(function() {
-    var $new = $($('#input-template').html());
-    $('#base').append($new);
+    app.insertNode('input');
   });
-  
-  $('#add-input').click();
-  $('#add-input').click();
 });
