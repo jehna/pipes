@@ -49,7 +49,14 @@ $(function() {
     
   }
   
-  
+  function getSnapPointToElement($e) {
+    var type = $e.is('.input') ? INPUT : OUTPUT;
+    return {
+      element: $e,
+      eX: $e.offset().left + (type === INPUT ? -20 : ($e.width() + 20)),
+      eY: $e.offset().top + 10
+    };
+  }
   
   var $body = $('body');
   var $canvas = $('#c');
@@ -57,6 +64,9 @@ $(function() {
   var ctx = new RetinaCanvas(canvas.getContext('2d'));
   var begin;
   var swap;
+  
+  var $availableToSnap;
+  var $snapTo;
   
   ctx.imageSmoothingEnabled = true;
   
@@ -79,6 +89,28 @@ $(function() {
       var tmp = from;
       from = to;
       to = tmp;
+    }
+    
+    // Try snapping
+    $snapTo = false;
+    var compareTo = swap ? from : to;
+    $availableToSnap.each(function() {
+      var o = getSnapPointToElement($(this));
+      if (Math.abs(o.eX - compareTo.x) + Math.abs(o.eY - compareTo.y) < 60) {
+        $snapTo = $(this);
+      }
+    });
+    if ($snapTo) {
+      var point = getSnapPointToElement($snapTo);
+      var newPoint = {
+        x: point.eX,
+        y: point.eY
+      };
+      if (swap) {
+        from = newPoint;
+      } else {
+        to = newPoint;
+      }
     }
     
     var diff = {
@@ -130,11 +162,11 @@ $(function() {
       
       swap = type === INPUT;
       
-      begin = {
-        element: $t,
-        eX: $t.offset().left + (type === INPUT ? -20 : ($t.width() + 20)),
-        eY: $t.offset().top + 10
-      };
+      begin = getSnapPointToElement($t);
+      
+      var searchFor = type === INPUT ? '.output' : '.input';
+      var $ownInputs = $t.closest('.card').find(searchFor);
+      $availableToSnap = $(searchFor).not($ownInputs);
       
       var mouseUp = function() {
         $body.off('mousemove', enableDrag);
