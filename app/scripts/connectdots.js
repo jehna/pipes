@@ -49,12 +49,10 @@ $(function() {
     
   }
   
-  function getSnapPointToElement($e) {
-    var type = $e.is('.input') ? INPUT : OUTPUT;
+  function getSnapPointToElement($e, type) {
     return {
-      element: $e,
-      eX: $e.offset().left + (type === INPUT ? -20 : ($e.width() + 20)),
-      eY: $e.offset().top + 10
+      x: $e.offset().left + (type === INPUT ? -20 : ($e.width() + 20)),
+      y: $e.offset().top + 10
     };
   }
   
@@ -68,16 +66,26 @@ $(function() {
   var $availableToSnap;
   var $snapTo;
   
+  var fromIO;
+  var toIO;
+  
+  var lastFrame;
+  
   ctx.imageSmoothingEnabled = true;
   
-  $canvas.attr('width', $body.width()*2);
-  $canvas.attr('height', $body.height()*2);
+  function refreshCanvasSize() {
+    $canvas.attr('width', $body.width()*2);
+    $canvas.attr('height', $body.height()*2);
+    refreshCanvas();
+  }
+  
+  $(window).on('resize', refreshCanvasSize);
   
   var enableDrag = function(event) {
     
     var from = {
-      x: begin.eX,
-      y: begin.eY
+      x: begin.x,
+      y: begin.y
     };
     
     var to = {
@@ -96,31 +104,38 @@ $(function() {
     $('.highlight-snap').removeClass('highlight-snap');
     var compareTo = swap ? from : to;
     $availableToSnap.each(function() {
-      var o = getSnapPointToElement($(this));
-      if (Math.abs(o.eX - compareTo.x) + Math.abs(o.eY - compareTo.y) < 60) {
+      var o = getSnapPointToElement($(this), swap ? OUTPUT : INPUT);
+      if (Math.abs(o.x - compareTo.x) + Math.abs(o.y - compareTo.y) < 60) {
         $snapTo = $(this);
       }
     });
     if ($snapTo) {
       $snapTo.addClass('highlight-snap');
-      var point = getSnapPointToElement($snapTo);
-      var newPoint = {
-        x: point.eX,
-        y: point.eY
-      };
+      var newPoint = getSnapPointToElement($snapTo, swap ? OUTPUT : INPUT);
+      
       if (swap) {
         from = newPoint;
+        fromIO = app.getCachedIOById($snapTo.attr('id'));
       } else {
         to = newPoint;
+        toIO = app.getCachedIOById($snapTo.attr('id'));
       }
     }
+    
+    window.cancelAnimationFrame(lastFrame);
+    lastFrame = window.requestAnimationFrame(function() {
+      refreshCanvas();
+      drawConnection(from, to);
+    });
+  };
+  
+  function drawConnection(from, to) {
     
     var diff = {
       x: to.x - from.x,
       y: to.y - from.y,
     };
     
-    ctx.clearRect(0, 0, canvas.width/2, canvas.height/2);
     ctx.beginPath();
     ctx.lineWidth = 6;
     ctx.strokeStyle = '#ffcc00';
@@ -148,7 +163,7 @@ $(function() {
       to.x, to.y
     );
     ctx.stroke();
-  };
+  }
   
   var INPUT = true;
   var OUTPUT = false;
@@ -159,26 +174,54 @@ $(function() {
     
     var $t = $(this);
     var type = $t.is('.input') ? INPUT : OUTPUT;
+    var io = app.getCachedIOById($t.attr('id'));
     
-    if (event.type === 'mousedown') {
-      
-      swap = type === INPUT;
-      
-      begin = getSnapPointToElement($t);
-      
-      var searchFor = type === INPUT ? '.output' : '.input';
-      var $ownInputs = $t.closest('.card').find(searchFor);
-      $availableToSnap = $(searchFor).not($ownInputs);
-      
-      var mouseUp = function() {
-        $body.off('mousemove', enableDrag);
-        $body.off('mouseup', mouseUp);
-        $('.highlight-snap').removeClass('highlight-snap');
-      };
-      
-      $body.on('mousemove', enableDrag);
-      $body.on('mouseup', mouseUp);
+    swap = type === INPUT;
+    
+    if (swap) {
+      toIO = io;
+    } else {
+      fromIO = io;
     }
     
+    begin = getSnapPointToElement($t, type);
+    
+    var searchFor = type === INPUT ? '.output' : '.input';
+    var $ownInputs = $t.closest('.card').find(searchFor);
+    $availableToSnap = $(searchFor).not($ownInputs);
+    
+    var mouseUp = function() {
+      $body.off('mousemove', enableDrag);
+      $body.off('mouseup', mouseUp);
+      $('.highlight-snap').removeClass('highlight-snap');
+      
+      if (fromIO && toIO) {
+        app.insertConnection(fromIO.io, toIO.io);
+      }
+      
+      fromIO = null;
+      toIO = null;
+      refreshCanvas();
+    };
+    
+    $body.on('mousemove', enableDrag);
+    $body.on('mouseup', mouseUp);
+    
   });
+  
+  
+  function refreshCanvas() {
+    ctx.clearRect(0, 0, canvas.width/2, canvas.height/2);
+    app.data.connections.forEach(function(connection) {
+      var fromElem = app.getCachedIOById(connection.from).element;
+      var toElem = app.getCachedIOById(connection.to).element;
+      
+      var from = getSnapPointToElement(fromElem, OUTPUT);
+      var to = getSnapPointToElement(toElem, INPUT);
+      drawConnection(from, to);
+    });
+  }
+  
+  app.listeners.refreshConnections.push(refreshCanvas);
+  refreshCanvasSize();
 });

@@ -4,6 +4,9 @@ function App() {
   var self = this;
   this.nodeCache = [];
   this.ioCache = [];
+  this.listeners = {
+    refreshConnections: []
+  };
   setInterval(function() {
     self.save();
   }, 5000);
@@ -18,7 +21,8 @@ App.prototype.load = function(data) {
   if (!data) {
     // Build a skeleton for first use
     data = {
-      nodes: []
+      nodes: [],
+      connections: []
     };
   }
   if (typeof data === 'string') {
@@ -51,7 +55,8 @@ App.prototype.refreshNode = function(node) {
       
       self.ioCache[output.uuid] = {
         io: output,
-        element: elem
+        element: elem,
+        type: 'output'
       };
     });
     node.inputs.forEach(function(input) {
@@ -63,7 +68,8 @@ App.prototype.refreshNode = function(node) {
       
       self.ioCache[input.uuid] = {
         io: input,
-        element: elem
+        element: elem,
+        type: 'input'
       };
     });
     
@@ -106,11 +112,30 @@ App.prototype.insertNode = function(type) {
   this.data.nodes.push(newNode);
   this.refreshNode(newNode);
 };
+App.prototype.insertConnection = function(from, to) {
+  var newConnection = {
+    from: from.uuid,
+    to: to.uuid
+  };
+  this.data.connections.push(newConnection);
+  this.refreshConnections();
+};
+App.prototype.refreshConnections = function() {
+  this.listeners.refreshConnections.forEach(function(fn) {
+    fn();
+  });
+};
 App.prototype.save = function() {
   localStorage.setItem('state', JSON.stringify(this.data));
 };
 App.prototype.getNodeById = function(id) {
   return this.nodeCache[id].node;
+};
+App.prototype.getIOById = function(id) {
+  return this.getCachedIOById(id).io;
+};
+App.prototype.getCachedIOById = function(id) {
+  return this.ioCache[id];
 };
 App.nodeTypes = {
   input: {

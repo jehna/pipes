@@ -18,6 +18,7 @@ $(function() {
       y: diff.y + begin.tY
     };
     app.refreshNode(dragNode);
+    app.refreshConnections();
   };
   
   $('#base').on('mousedown mouseup', '.card', function(event) {
