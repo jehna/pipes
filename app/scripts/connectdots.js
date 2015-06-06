@@ -93,6 +93,7 @@ $(function() {
     
     // Try snapping
     $snapTo = false;
+    $('.highlight-snap').removeClass('highlight-snap');
     var compareTo = swap ? from : to;
     $availableToSnap.each(function() {
       var o = getSnapPointToElement($(this));
@@ -101,6 +102,7 @@ $(function() {
       }
     });
     if ($snapTo) {
+      $snapTo.addClass('highlight-snap');
       var point = getSnapPointToElement($snapTo);
       var newPoint = {
         x: point.eX,
@@ -171,6 +173,7 @@ $(function() {
       var mouseUp = function() {
         $body.off('mousemove', enableDrag);
         $body.off('mouseup', mouseUp);
+        $('.highlight-snap').removeClass('highlight-snap');
       };
       
       $body.on('mousemove', enableDrag);
