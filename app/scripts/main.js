@@ -30,14 +30,18 @@ App.prototype.load = function(data) {
   });
 };
 App.prototype.refreshNode = function(node) {
-  var $e = $('#' + node.uuid);
+  var cachedNode = this.nodeCache[node.uuid];
+  var $e = cachedNode ? cachedNode.element : $('#' + node.uuid);
   
   // Create id doesn't exist
   if (!$e.length) {
     $e = $($('#' + node.type + '-template').html());
     $e.attr('id', node.uuid);
     $('#base').append($e);
-    this.nodeCache[node.uuid] = node;
+    this.nodeCache[node.uuid] = {
+      node: node,
+      element: $e
+    };
   }
   
   // Position correctly
@@ -57,14 +61,13 @@ App.prototype.insertNode = function(type) {
   };
   
   this.data.nodes.push(newNode);
-  this.nodeCache[newNode.uuid] = newNode;
   this.refreshNode(newNode);
 };
 App.prototype.save = function() {
   localStorage.setItem('state', JSON.stringify(this.data));
 };
 App.prototype.getNodeById = function(id) {
-  return this.nodeCache[id];
+  return this.nodeCache[id].node;
 };
 
 
