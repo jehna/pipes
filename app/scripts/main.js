@@ -24,6 +24,9 @@ App.prototype.load = function(data) {
       nodes: [],
       connections: []
     };
+    
+    // Just for debugging
+    data = '{"nodes":[{"name":"Link","inputs":[],"outputs":[{"name":"Output","uuid":"df6ce7f8-9faf-4eba-ab1d-07dda5101767"}],"uuid":"cf78bc2d-be43-4b0a-84fc-be1aa7e730f2","type":"input.link","position":{"x":100,"y":100}},{"name":"Redirect","inputs":[{"name":"Input","uuid":"53eb848f-9d6e-428d-a3d7-8e4651a3022d"}],"outputs":[],"uuid":"861e9934-321e-4243-b441-8f446afc0dc2","type":"output.redirect","position":{"x":1098,"y":98}},{"name":"Session","inputs":[{"name":"Input","uuid":"216c8131-783a-4f88-9de6-eca21e255011"}],"outputs":[{"name":"Output","uuid":"f2610bf9-73c9-4964-af0c-782cad37f65a"}],"uuid":"6a1550fc-4dc7-4be3-92b5-60ba6e278075","type":"modifier.session","position":{"x":800,"y":71}},{"name":"DB Find","inputs":[{"name":"Input","uuid":"1d67b168-4556-45bc-9a00-5c7228239f2e"}],"outputs":[{"name":"Success","uuid":"2c1d9217-c86c-415a-a158-d15cab991cf4"},{"name":"Fail","uuid":"196ce114-c50a-4271-ba22-0e15960f40ab"}],"uuid":"4855c8f5-d8f8-4d19-a333-7e46cc228b3d","type":"db.find","position":{"x":380,"y":60}},{"name":"Redirect","inputs":[{"name":"Input","uuid":"dc6881cd-459f-474b-aedd-523d82e5692b"}],"outputs":[],"uuid":"65c811a5-6ffc-4248-84ed-1b036f1692b0","type":"output.redirect","position":{"x":695,"y":251}}],"connections":[{"from":"f2610bf9-73c9-4964-af0c-782cad37f65a","to":"53eb848f-9d6e-428d-a3d7-8e4651a3022d"},{"from":"df6ce7f8-9faf-4eba-ab1d-07dda5101767","to":"1d67b168-4556-45bc-9a00-5c7228239f2e"},{"from":"2c1d9217-c86c-415a-a158-d15cab991cf4","to":"216c8131-783a-4f88-9de6-eca21e255011"},{"from":"196ce114-c50a-4271-ba22-0e15960f40ab","to":"dc6881cd-459f-474b-aedd-523d82e5692b"}]}';
   }
   if (typeof data === 'string') {
     data = JSON.parse(data);
@@ -33,6 +36,7 @@ App.prototype.load = function(data) {
   this.data.nodes.forEach(function(node) {
     self.refreshNode(node);
   });
+  self.refreshConnections();
 };
 App.prototype.refreshNode = function(node) {
   var self = this;
@@ -149,6 +153,32 @@ App.nodeTypes = {
       ]
     }
   },
+  output: {
+    redirect: {
+      name: 'Redirect',
+      inputs: [
+        {
+          name: 'Input'
+        }
+      ],
+      outputs: []
+    }
+  },
+  modifier: {
+    session: {
+      name: 'Session',
+      inputs: [
+        {
+          name: 'Input'
+        }
+      ],
+      outputs: [
+        {
+          name: 'Output'
+        }
+      ]
+    }
+  },
   db: {
     find: {
       name: 'DB Find',
@@ -165,6 +195,13 @@ App.nodeTypes = {
           name: 'Fail'
         }
       ]
+    }
+  },
+  other: {
+    settings: {
+      name: 'Settings',
+      inputs: [],
+      outputs: []
     }
   }
 };
